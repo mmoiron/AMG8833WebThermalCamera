@@ -1,0 +1,13 @@
+{
+  "name": "AMG8833 Web Thermal Camera",
+  "version": "1.0.0",
+  "builds": [
+    {
+      "chipFamily": "ESP8266",
+      "parts": [
+        { "path": "./firmware/firmware.bin", "offset": 0 },
+        { "path": "./firmware/littlefs.bin", "offset": 3145728 }
+      ]
+    }
+  ]
+}
