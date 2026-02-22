@@ -104,6 +104,9 @@ void setup() {
 void loop() {
     uint32_t now = millis();
 
+    // Handle deferred operations (WiFi restart etc.)
+    webserver_loop();
+
     // Update power manager
     power_update();
 

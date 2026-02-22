@@ -7,6 +7,22 @@
 #define AP_CHANNEL  1
 
 static bool sta_was_connected = false;
+static bool ap_started = false;
+
+static void ensure_ap() {
+    if (ap_started) return;
+
+    WiFi.softAPConfig(
+        IPAddress(192, 168, 4, 1),
+        IPAddress(192, 168, 4, 1),
+        IPAddress(255, 255, 255, 0)
+    );
+    WiFi.softAP(AP_SSID, AP_PASSWORD, AP_CHANNEL, false, 4);
+    ap_started = true;
+
+    Serial.printf("[WiFi] AP started: %s @ %s\n",
+        AP_SSID, WiFi.softAPIP().toString().c_str());
+}
 
 void wifi_init() {
     SystemConfig& cfg = config_get();
@@ -14,24 +30,17 @@ void wifi_init() {
     if (cfg.sta_enabled && strlen(cfg.sta_ssid) > 0) {
         // AP + STA mode
         WiFi.mode(WIFI_AP_STA);
-        Serial.printf("[WiFi] AP+STA mode, connecting to '%s'\n", cfg.sta_ssid);
+        ensure_ap();
+        Serial.printf("[WiFi] Connecting to '%s'...\n", cfg.sta_ssid);
         WiFi.begin(cfg.sta_ssid, cfg.sta_password);
+        sta_was_connected = false;
     } else {
-        // AP only
+        // AP only — disconnect STA if it was active
         WiFi.mode(WIFI_AP);
+        ensure_ap();
+        sta_was_connected = false;
         Serial.println("[WiFi] AP-only mode");
     }
-
-    // Configure AP
-    WiFi.softAPConfig(
-        IPAddress(192, 168, 4, 1),
-        IPAddress(192, 168, 4, 1),
-        IPAddress(255, 255, 255, 0)
-    );
-    WiFi.softAP(AP_SSID, AP_PASSWORD, AP_CHANNEL, false, 4);
-
-    Serial.printf("[WiFi] AP started: %s @ %s\n",
-        AP_SSID, WiFi.softAPIP().toString().c_str());
 }
 
 void wifi_update() {

@@ -170,7 +170,10 @@ function renderHeatmap(pixels8x8, scaleMin, scaleMax, hotspotX, hotspotY) {
     const cx = (hotspotX + 0.5) * sx;
     const cy = (hotspotY + 0.5) * sx;
     const r  = sx * 0.4;
-    heatmapCtx.strokeStyle = '#fff';
+    // Pick black or white based on hotspot pixel brightness
+    var pIdx = (Math.round(cy) * res + Math.round(cx)) * 4;
+    var lum = imgData.data[pIdx] * 0.299 + imgData.data[pIdx+1] * 0.587 + imgData.data[pIdx+2] * 0.114;
+    heatmapCtx.strokeStyle = lum > 128 ? '#000' : '#fff';
     heatmapCtx.lineWidth = Math.max(1, res / 48);
     heatmapCtx.beginPath();
     // Crosshair
@@ -358,13 +361,20 @@ function loadConfig() {
     });
 }
 
-function sendConfig(obj) {
+function sendConfig(obj, callback) {
   fetch('/api/config', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(obj),
+  }).then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }).then(function(data) {
+    console.log('Config saved:', data);
+    if (callback) callback(true);
   }).catch(function(e) {
     console.error('Config send failed:', e);
+    if (callback) callback(false);
   });
 }
 
@@ -434,10 +444,26 @@ function toggleStaFields() {
 }
 
 document.getElementById('btn-sta-save').addEventListener('click', function() {
+  var btn = this;
+  var origText = btn.textContent;
+  btn.textContent = 'Saving...';
+  btn.disabled = true;
+
   sendConfig({
     sta_enabled:  document.getElementById('ctrl-sta-enabled').checked,
     sta_ssid:     document.getElementById('ctrl-sta-ssid').value,
     sta_password: document.getElementById('ctrl-sta-pass').value,
+  }, function(ok) {
+    if (ok) {
+      btn.textContent = 'Saved! Connecting...';
+      // Poll config after a few seconds to get the STA IP
+      setTimeout(function() { loadConfig(); btn.textContent = origText; btn.disabled = false; }, 5000);
+      setTimeout(function() { loadConfig(); }, 10000);
+      setTimeout(function() { loadConfig(); }, 15000);
+    } else {
+      btn.textContent = 'Error! Try again';
+      setTimeout(function() { btn.textContent = origText; btn.disabled = false; }, 2000);
+    }
   });
 });
 

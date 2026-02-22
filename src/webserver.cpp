@@ -11,6 +11,15 @@
 static AsyncWebServer  server(80);
 static AsyncWebSocket  ws("/ws");
 
+// Deferred WiFi restart — avoids killing the HTTP response
+static bool     wifi_restart_pending = false;
+static uint32_t wifi_restart_at_ms   = 0;
+
+// Buffer for POST body (config JSON is small, <256 bytes)
+static uint8_t  post_body_buf[512];
+static size_t   post_body_len = 0;
+static bool     post_body_ready = false;
+
 // ── WebSocket events ────────────────────────────────
 
 static void onWsEvent(AsyncWebSocket* srv, AsyncWebSocketClient* client,
@@ -69,18 +78,39 @@ static void handleGetConfig(AsyncWebServerRequest* request) {
 
 // ── REST API: POST /api/config ──────────────────────
 
-static void handlePostConfig(AsyncWebServerRequest* request,
-                             uint8_t* data, size_t len, size_t index, size_t total)
+// Body handler: accumulates incoming data
+static void handlePostConfigBody(AsyncWebServerRequest* request,
+                                 uint8_t* data, size_t len, size_t index, size_t total)
 {
-    // Only process on first (and usually only) chunk
-    if (index != 0) return;
+    if (index == 0) {
+        post_body_len = 0;
+        post_body_ready = false;
+    }
+    if (index + len <= sizeof(post_body_buf)) {
+        memcpy(post_body_buf + index, data, len);
+        post_body_len = index + len;
+    }
+    if (index + len == total) {
+        post_body_ready = true;
+    }
+}
+
+// Request handler: called after body is complete
+static void handlePostConfigRequest(AsyncWebServerRequest* request) {
+    if (!post_body_ready || post_body_len == 0) {
+        request->send(400, "application/json", "{\"error\":\"no body\"}");
+        return;
+    }
 
     StaticJsonDocument<512> doc;
-    DeserializationError err = deserializeJson(doc, data, len);
+    DeserializationError err = deserializeJson(doc, post_body_buf, post_body_len);
     if (err) {
+        Serial.printf("[Web] POST /api/config parse error: %s\n", err.c_str());
         request->send(400, "application/json", "{\"error\":\"invalid json\"}");
         return;
     }
+
+    Serial.println("[Web] POST /api/config received");
 
     SystemConfig& cfg = config_get();
     bool need_wifi_restart = false;
@@ -132,22 +162,33 @@ static void handlePostConfig(AsyncWebServerRequest* request,
 
     config_save();
 
-    if (need_wifi_restart) {
-        wifi_init();
-    }
-
+    // Send response BEFORE restarting WiFi
     request->send(200, "application/json", "{\"ok\":true}");
+    Serial.println("[Web] POST /api/config OK");
+
+    if (need_wifi_restart) {
+        wifi_restart_pending = true;
+        wifi_restart_at_ms = millis() + 500;
+        Serial.println("[Web] WiFi restart scheduled in 500ms");
+    }
 }
 
 // ── Init ────────────────────────────────────────────
 
 void webserver_init() {
-    // Serve static files from LittleFS
-    server.serveStatic("/", LittleFS, "/www/").setDefaultFile("index.html");
+    // Serve static files from LittleFS — no cache to avoid stale JS
+    server.serveStatic("/", LittleFS, "/www/")
+        .setDefaultFile("index.html")
+        .setCacheControl("no-cache, no-store, must-revalidate");
 
     // API endpoints
     server.on("/api/config", HTTP_GET, handleGetConfig);
-    server.on("/api/config", HTTP_POST, nullptr, nullptr, handlePostConfig);
+
+    // POST config — request handler processes after body is accumulated
+    server.on("/api/config", HTTP_POST,
+        handlePostConfigRequest,
+        nullptr,
+        handlePostConfigBody);
 
     // WebSocket
     ws.onEvent(onWsEvent);
@@ -155,6 +196,14 @@ void webserver_init() {
 
     server.begin();
     Serial.println("[Web] Server started on port 80");
+}
+
+void webserver_loop() {
+    if (wifi_restart_pending && millis() >= wifi_restart_at_ms) {
+        wifi_restart_pending = false;
+        Serial.println("[Web] Applying deferred WiFi restart");
+        wifi_init();
+    }
 }
 
 void webserver_broadcast(const uint8_t* data, size_t len) {
