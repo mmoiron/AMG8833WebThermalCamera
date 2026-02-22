@@ -1,0 +1,173 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #1a1a2e;
+  --card: #16213e;
+  --accent: #e94560;
+  --text: #eee;
+  --text-dim: #999;
+  --border: #0f3460;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Connection banner */
+.banner {
+  text-align: center;
+  padding: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.banner.connected    { background: #0a7a3e; }
+.banner.disconnected { background: #9b1c31; }
+.banner.connecting   { background: #8a6d00; }
+
+/* Cards */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+.card h3 {
+  font-size: 14px;
+  color: var(--accent);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Heatmap */
+.heatmap-container {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+#heatmap {
+  flex: 1;
+  border-radius: 6px;
+  image-rendering: pixelated;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+#legend {
+  width: 30px;
+  border-radius: 4px;
+}
+
+/* Stats grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.stat {
+  text-align: center;
+}
+.stat-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.stat-value {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Controls */
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.control-row:last-child {
+  border-bottom: none;
+}
+.control-row label {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+select, .num-input, .text-input {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 14px;
+  min-width: 70px;
+}
+.text-input {
+  flex: 1;
+  min-width: 120px;
+}
+.num-input {
+  width: 70px;
+}
+
+input[type="range"] {
+  flex: 1;
+  min-width: 80px;
+  accent-color: var(--accent);
+}
+
+input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+
+.control-row span {
+  font-size: 13px;
+  min-width: 36px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Buttons */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:active {
+  opacity: 0.8;
+}
+
+/* Responsive */
+@media (min-width: 480px) {
+  body {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 12px;
+  }
+}

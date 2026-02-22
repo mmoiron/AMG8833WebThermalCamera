@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Thermal Camera</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Connection banner -->
+<div id="conn-banner" class="banner disconnected">Disconnected</div>
+
+<!-- Heatmap -->
+<div class="card">
+  <div class="heatmap-container">
+    <canvas id="heatmap"></canvas>
+    <canvas id="legend"></canvas>
+  </div>
+</div>
+
+<!-- Statistics -->
+<div class="card stats-grid">
+  <div class="stat">
+    <span class="stat-label">Min</span>
+    <span id="stat-min" class="stat-value">--</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Mean</span>
+    <span id="stat-mean" class="stat-value">--</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Max</span>
+    <span id="stat-max" class="stat-value">--</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Hotspot</span>
+    <span id="stat-hotspot" class="stat-value">--</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">FPS</span>
+    <span id="stat-fps" class="stat-value">--</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Status</span>
+    <span id="stat-status" class="stat-value">--</span>
+  </div>
+</div>
+
+<!-- Visualization Controls -->
+<div class="card">
+  <h3>Visualization</h3>
+  <div class="control-row">
+    <label>Interpolation</label>
+    <select id="ctrl-interp">
+      <option value="nearest">Nearest</option>
+      <option value="bilinear" selected>Bilinear</option>
+      <option value="bicubic">Bicubic</option>
+    </select>
+  </div>
+  <div class="control-row">
+    <label>Resolution</label>
+    <select id="ctrl-resolution">
+      <option value="16">16x16</option>
+      <option value="24" selected>24x24</option>
+      <option value="32">32x32</option>
+    </select>
+  </div>
+  <div class="control-row">
+    <label>Autoscale</label>
+    <input type="checkbox" id="ctrl-autoscale" checked>
+  </div>
+  <div class="control-row" id="row-smoothing">
+    <label>Scale Smoothing</label>
+    <input type="range" id="ctrl-smoothing" min="0.05" max="1" step="0.05" value="0.2">
+    <span id="val-smoothing">0.20</span>
+  </div>
+  <div class="control-row" id="row-manual-scale" style="display:none">
+    <label>Min &deg;C</label>
+    <input type="number" id="ctrl-scale-min" value="15" step="0.5" class="num-input">
+    <label>Max &deg;C</label>
+    <input type="number" id="ctrl-scale-max" value="40" step="0.5" class="num-input">
+  </div>
+  <div class="control-row">
+    <label>Show Hotspot</label>
+    <input type="checkbox" id="ctrl-hotspot" checked>
+  </div>
+</div>
+
+<!-- Sensor Controls -->
+<div class="card">
+  <h3>Sensor</h3>
+  <div class="control-row">
+    <label>FPS</label>
+    <select id="ctrl-fps">
+      <option value="1">1</option>
+      <option value="5" selected>5</option>
+      <option value="10">10</option>
+    </select>
+  </div>
+  <div class="control-row">
+    <label>Idle Timeout (s)</label>
+    <select id="ctrl-idle-timeout">
+      <option value="5">5</option>
+      <option value="10" selected>10</option>
+      <option value="30">30</option>
+      <option value="60">60</option>
+    </select>
+  </div>
+  <div class="control-row">
+    <label>Calibration Offset (&deg;C)</label>
+    <input type="range" id="ctrl-offset" min="-5" max="5" step="0.1" value="0">
+    <span id="val-offset">0.0</span>
+  </div>
+  <div class="control-row">
+    <label>Temporal Filter</label>
+    <input type="checkbox" id="ctrl-temporal">
+  </div>
+  <div class="control-row" id="row-alpha" style="display:none">
+    <label>Alpha</label>
+    <input type="range" id="ctrl-alpha" min="0.05" max="0.8" step="0.01" value="0.3">
+    <span id="val-alpha">0.30</span>
+  </div>
+</div>
+
+<!-- WiFi Station -->
+<div class="card">
+  <h3>WiFi Station</h3>
+  <div class="control-row">
+    <label>Enable STA</label>
+    <input type="checkbox" id="ctrl-sta-enabled">
+  </div>
+  <div id="sta-fields" style="display:none">
+    <div class="control-row">
+      <label>SSID</label>
+      <input type="text" id="ctrl-sta-ssid" maxlength="32" class="text-input">
+    </div>
+    <div class="control-row">
+      <label>Password</label>
+      <input type="password" id="ctrl-sta-pass" maxlength="64" class="text-input">
+    </div>
+    <div class="control-row">
+      <label>STA IP</label>
+      <span id="sta-ip">--</span>
+    </div>
+    <button id="btn-sta-save" class="btn">Save &amp; Connect</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
